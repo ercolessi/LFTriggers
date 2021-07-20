@@ -98,7 +98,7 @@ struct strangenessFilter {
   Configurable<float> etadau{"etadau", 0.8, "EtaDaughters"};
   Configurable<float> masslambdalimit{"masslambdalimit", 0.01, "masslambdalimit"}; //0.006 Chiara
   Configurable<float> omegarej{"omegarej", 0.005, "omegarej"};
-  Configurable<float> ximassWindow{"ximasswindow", 0.075, "Xi Mass Window"};
+  Configurable<float> ximasswindow{"ximasswindow", 0.075, "Xi Mass Window"};
   Configurable<int> properlifetimefactor{"properlifetimefactor", 5, "Proper Lifetime cut"};
   Configurable<float> nsigmatpc{"nsigmatpc", 6, "N Sigmas TPC"};
   //missing selections: OOB pileup?
@@ -201,7 +201,7 @@ struct strangenessFilter {
         if (TMath::Abs(casc.dcapostopv()) < dcamesontopv)
           continue;
       }
-      if (TMath::Abs(casc.dcabachtopv()) < dcaBachtopv)
+      if (TMath::Abs(casc.dcabachtopv()) < dcabachtopv)
         continue;
       if (casc.v0radius() > v0radiusupperlimit || casc.v0radius() < v0radius)
         continue;
@@ -223,7 +223,7 @@ struct strangenessFilter {
         continue;
       if (TMath::Abs(casc.mOmega() - 1.67245) < omegarej)
         continue; //To be used constants::physics::MassOmega
-      if (properlifetimexi > properlifetimefactor * ctauxi)
+      if (xiproperlifetime > properlifetimefactor * ctauxi)
         continue;
       if (TMath::Abs(casc.yXi()) > rapidity)
         continue;
