@@ -76,7 +76,7 @@ struct strangenessFilter {
   HistogramRegistry QAHistos{"QAHistos", {}, OutputObjHandlingPolicy::AnalysisObject, true, true};
   OutputObj<TH1F> hProcessedEvents{TH1F("hProcessedEvents", "Strangeness - event filtered; Event counter; Number of events", 3, 0., 3.)};
 
-  //Selection criteria
+  //Selection criteria for cascades
   Configurable<float> cutzvertex{"cutzvertex", 10.0f, "Accepted z-vertex range"};
   Configurable<float> v0cospa{"v0cospa", 0.97, "V0 CosPA"}; //is it with respect to Xi decay vertex?
   Configurable<float> casccospa{"casccospa", 0.995, "V0 CosPA"};
@@ -105,6 +105,10 @@ struct strangenessFilter {
   //eta and y selections: loose enough?
   //eta selections of daughters
 
+  //Selections criteria for tacks                                                                                                                
+  Configurable<float> hEta{"hEta", 0.8f, "Eta range for trigger particles"};
+  Configurable<float> hMinPt{"hMinPt", 1.0f, "Min pt for trigger particles"};
+
   void init(o2::framework::InitContext&)
   {
 
@@ -123,18 +127,20 @@ struct strangenessFilter {
 
     hProcessedEvents->GetXaxis()->SetBinLabel(1, "Events processed");
     hProcessedEvents->GetXaxis()->SetBinLabel(2, "#Xi-#Xi");
-    hProcessedEvents->GetXaxis()->SetBinLabel(2, "high-#it{p}_{T} hadron - #Xi");
+    hProcessedEvents->GetXaxis()->SetBinLabel(3, "high-#it{p}_{T} hadron - #Xi");
   }
 
   //Filters
   Filter collisionFilter = (nabs(aod::collision::posZ) < cutzvertex);
+  Filter trackFilter = (nabs(aod::track::eta) < hEta) && (aod::track::pt>hMinPt);   
   Filter preFilterCasc = nabs(aod::cascdata::dcapostopv) > dcapostopv&& nabs(aod::cascdata::dcanegtopv) > dcanegtopv&& aod::cascdata::dcaV0daughters < dcav0dau&& aod::cascdata::dcacascdaughters < dcacascdau;
 
   //Tables
   using CollisionCandidates = soa::Filtered<soa::Join<aod::Collisions, aod::EvSels, aod::Cents>>::iterator;
+  using TrackCandidates = soa::Filtered<soa::Join<aod::Tracks, aod::TracksExtra, aod::TrackSelection>>;
   using DaughterTracks = soa::Join<aod::Tracks, aod::TracksExtra, aod::pidTOFPi, aod::pidTPCPi, aod::pidTOFPr, aod::pidTPCPr>;
 
-  void process(CollisionCandidates const& collision, aod::CascDataExt const& fullCasc, DaughterTracks& tracks)
+  void process(CollisionCandidates const& collision, TrackCandidates const& tracks, aod::CascDataExt const& fullCasc, DaughterTracks& dtracks)
   {
     if (!collision.alias()[kINT7]) {
       return;
