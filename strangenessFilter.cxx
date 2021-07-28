@@ -132,7 +132,7 @@ struct strangenessFilter {
 
   //Filters
   Filter collisionFilter = (nabs(aod::collision::posZ) < cutzvertex);
-  Filter trackFilter = (nabs(aod::track::eta) < hEta) && (aod::track::pt>hMinPt);   
+  Filter trackFilter = (nabs(aod::track::eta) < hEta) && (aod::track::pt>hMinPt) && (aod::track::isGlobalTrack == static_cast<uint8_t>(1u)) ;   
   Filter preFilterCasc = nabs(aod::cascdata::dcapostopv) > dcapostopv&& nabs(aod::cascdata::dcanegtopv) > dcanegtopv&& aod::cascdata::dcaV0daughters < dcav0dau&& aod::cascdata::dcacascdaughters < dcacascdau;
 
   //Tables
@@ -252,22 +252,10 @@ struct strangenessFilter {
     //High-pT hadron + Xi trigger definition
     if (xicounter > 0) {
       for (auto track : tracks) { // start loop over tracks
+	//all needed selections applied via aod::track::isGlobalTrack == static_cast<uint8_t>(1u)
+	//no we need track length selections?
+
         QAHistos.fill(HIST("hTriggeredParticles"), 1);
-        if (track.itsChi2NCl() > 4)
-          continue; //some decrease observed
-        QAHistos.fill(HIST("hTriggeredParticles"), 2);
-        if (track.tpcNClsCrossedRows() < 80)
-          continue; //~no changes
-        QAHistos.fill(HIST("hTriggeredParticles"), 3);
-        if (track.tpcCrossedRowsOverFindableCls() < 0.8)
-          continue; //no changes
-        QAHistos.fill(HIST("hTriggeredParticles"), 4);
-        if (track.length() < 90)
-          continue; //some decrease observed
-        QAHistos.fill(HIST("hTriggeredParticles"), 5);
-        if (float(track.tpcNClsCrossedRows()) / track.length() < 0.8)
-          continue;
-        QAHistos.fill(HIST("hTriggeredParticles"), 6);
         QAHistos.fill(HIST("PtTrigger"), track.pt());
 
         keepEvent[1] = true;
