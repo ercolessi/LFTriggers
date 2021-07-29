@@ -138,9 +138,9 @@ struct strangenessFilter {
   //Tables
   using CollisionCandidates = soa::Filtered<soa::Join<aod::Collisions, aod::EvSels, aod::Cents>>::iterator;
   using TrackCandidates = soa::Filtered<soa::Join<aod::Tracks, aod::TracksExtra, aod::TrackSelection>>;
-  using DaughterTracks = soa::Join<aod::Tracks, aod::TracksExtra, aod::pidTOFPi, aod::pidTPCPi, aod::pidTOFPr, aod::pidTPCPr>;
+  using DaughterTracks = soa::Join<aod::FullTracks, aod::TracksExtended, aod::pidTOFPi, aod::pidTPCPi, aod::pidTOFPr, aod::pidTPCPr>;
 
-  void process(CollisionCandidates const& collision, TrackCandidates const& tracks, aod::CascDataExt const& fullCasc, DaughterTracks& dtracks)
+  void process(CollisionCandidates const& collision, TrackCandidates const& tracks, aod::V0Datas const& V0s,soa::Join<aod::Cascades, aod::CascDataExt> const& fullCasc, DaughterTracks& dtracks)
   {
     if (!collision.alias()[kINT7]) {
       return;
@@ -175,27 +175,29 @@ struct strangenessFilter {
       xiproperlifetime = massxi * xipos / (xiptotmom + 1e-13);
 
       //Selections
-      /*if (casc.sign() == 1) {
-         if (TMath::Abs(casc.posTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
+      auto v0 = casc.v0_as<aod::V0Datas>();
+
+      if (casc.sign() == 1) {
+         if (TMath::Abs(v0.posTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
           continue;
-        if (TMath::Abs(casc.negTrack_as<DaughterTracks>().tpcNSigmaPr()) > nsigmatpc)
+        if (TMath::Abs(v0.negTrack_as<DaughterTracks>().tpcNSigmaPr()) > nsigmatpc)
           continue;
       } else {
-        if (TMath::Abs(casc.posTrack_as<DaughterTracks>().tpcNSigmaPr()) > nsigmatpc)
+        if (TMath::Abs(v0.posTrack_as<DaughterTracks>().tpcNSigmaPr()) > nsigmatpc)
           continue;
-        if (TMath::Abs(casc.negTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
+        if (TMath::Abs(v0.negTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
           continue;
       }
-      if (TMath::Abs(casc.bachTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
-        continue; //?
+      //if (TMath::Abs(casc.bachelor_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
+      //  continue; //?
 
-      if (TMath::Abs(casc.bachTrack_as<DaughterTracks>().eta()) > etadau)
-        continue; //?
-      if (TMath::Abs(casc.posTrack_as<DaughterTracks>().eta()) > etadau)
-        continue; //?
-      if (TMath::Abs(casc.negTrack_as<DaughterTracks>().eta()) > etadau)
-        continue; //?
-      */
+      //if (TMath::Abs(casc.bachelor_as<DaughterTracks>().eta()) > etadau)
+      //  continue; //?
+      if (TMath::Abs(v0.posTrack_as<DaughterTracks>().eta()) > etadau)
+        continue; 
+      if (TMath::Abs(v0.negTrack_as<DaughterTracks>().eta()) > etadau)
+        continue; 
+      
       if (casc.sign() == 1) {
         if (TMath::Abs(casc.dcapostopv()) < dcabaryontopv)
           continue;
