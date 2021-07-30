@@ -74,7 +74,8 @@ struct strangenessFilter {
 
   //Define a histograms and registries
   HistogramRegistry QAHistos{"QAHistos", {}, OutputObjHandlingPolicy::AnalysisObject, true, true};
-  OutputObj<TH1F> hProcessedEvents{TH1F("hProcessedEvents", "Strangeness - event filtered; Event counter; Number of events", 3, 0., 3.)};
+  HistogramRegistry EventsvsMultiplicity{"EventsvsMultiplicity", {}, OutputObjHandlingPolicy::AnalysisObject, true, true};
+  OutputObj<TH1F> hProcessedEvents{TH1F("hProcessedEvents", "Strangeness - event filtered; Event counter; Number of events", 4, 0., 4.)};
 
   //Selection criteria for cascades
   Configurable<float> cutzvertex{"cutzvertex", 10.0f, "Accepted z-vertex range"};
@@ -97,8 +98,10 @@ struct strangenessFilter {
   Configurable<float> minpt{"minpt", 0.5, "minpt"};
   Configurable<float> etadau{"etadau", 0.8, "EtaDaughters"};
   Configurable<float> masslambdalimit{"masslambdalimit", 0.01, "masslambdalimit"}; //0.006 Chiara
-  Configurable<float> omegarej{"omegarej", 0.005, "omegarej"};
+  Configurable<float> omegarej{"omegarej", 0.005, "omegarej"}; 
+  Configurable<float> xirej{"xirej", 0.008, "xirej"};  //merge the two rejection variables into one?
   Configurable<float> ximasswindow{"ximasswindow", 0.075, "Xi Mass Window"};
+  Configurable<float> omegamasswindow{"omegamasswindow", 0.075, "Omega Mass Window"}; //merge the two windows variables into one?   
   Configurable<int> properlifetimefactor{"properlifetimefactor", 5, "Proper Lifetime cut"};
   Configurable<float> nsigmatpc{"nsigmatpc", 6, "N Sigmas TPC"};
   //missing selections: OOB pileup?
@@ -114,20 +117,32 @@ struct strangenessFilter {
 
     //  std::vector<double> ptBinning = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 2.0, 2.2, 2.4, 2.8, 3.2, 3.6, 4., 5., 10., 20.};
     //  AxisSpec ptAxis = {ptBinning, "#it{p}_{T} (GeV/#it{c})"};
-    //  std::vector<double> centBinning = {0., 1., 5., 10., 20., 30., 40., 50., 70., 100.};
-    //  AxisSpec centAxis = {centBinning, "V0M (%)"};
+    std::vector<double> centBinning = {0., 1., 5., 10., 20., 30., 40., 50., 70., 100.};
+    AxisSpec centAxis = {centBinning, "V0M (%)"};
+    AxisSpec ximassAxis = {100, 1.30f, 1.34f};
+    AxisSpec omegamassAxis = {100, 1.5f, 1.8f};
+    AxisSpec ptAxis = {100, 0.0f, 10.0f, "#it{p}_{T} (GeV/#it{c})"}; 
 
     QAHistos.add("Centrality", "Centrality distribution (V0M)", HistType::kTH1F, {{100, 0, 100, "V0M (%)"}});
     QAHistos.add("VtxZAfterSel", "Vertex distribution in Z;Z (cm)", HistType::kTH1F, {{100, -20, 20}});
-    QAHistos.add("hMassXiBefSel", "hMassXiBefSel", HistType::kTH1F, {{100, 1.30f, 1.34f}});
-    QAHistos.add("hMassXiAfterSel", "hMassXiAfterSel", HistType::kTH1F, {{100, 1.30f, 1.34f}});
-    //QAHistos.add("hMassXiAfterSelvsPt", "hMassXiAfterSelvsPt", HistType::kTH2F, {{100, 1.30f, 1.34f}}, {{100, 0f, 10f, "#it{p}_{T} (GeV/#it{c})"}}); //add topological variables histos
+    QAHistos.add("hMassXiBefSel", "hMassXiBefSel", HistType::kTH1F, {ximassAxis});
+    QAHistos.add("hMassXiAfterSel", "hMassXiAfterSel", HistType::kTH1F, {ximassAxis});
+    QAHistos.add("hMassOmegaBefSel", "hMassOmegaBefSel", HistType::kTH1F, {omegamassAxis});
+    QAHistos.add("hMassOmegaAfterSel", "hMassOmegaAfterSel", HistType::kTH1F, {omegamassAxis});
+    QAHistos.add("hMassXiAfterSelvsPt", "hMassXiAfterSelvsPt", HistType::kTH2F, {ximassAxis, ptAxis});
+    QAHistos.add("hMassOmegaAfterSelvsPt", "hMassOmegaAfterSelvsPt", HistType::kTH2F, {omegamassAxis, ptAxis});
     QAHistos.add("hTriggeredParticles", "Selected triggered particles", HistType::kTH1F, {{10, 0.5, 10.5, "Trigger counter"}});
     QAHistos.add("PtTrigger", "PtTrigger", HistType::kTH1F, {{300, 0, 30, "Pt of trigger particle"}});
+
+    EventsvsMultiplicity.add("AllEventsvsMultiplicity", "Multiplicity distribution of all events", HistType::kTH1F, {centAxis});
+    EventsvsMultiplicity.add("DXiEventsvsMultiplicity", "Multiplicity distribution of events with >1Xi", HistType::kTH1F, {centAxis});
+    EventsvsMultiplicity.add("hXiEventsvsMultiplicity", "Multiplicity distribution of events with h + Xi", HistType::kTH1F, {centAxis});
+    EventsvsMultiplicity.add("OmegaEventsvsMultiplicity", "Multiplicity distribution of events with >=1 Omega", HistType::kTH1F, {centAxis});
 
     hProcessedEvents->GetXaxis()->SetBinLabel(1, "Events processed");
     hProcessedEvents->GetXaxis()->SetBinLabel(2, "#Xi-#Xi");
     hProcessedEvents->GetXaxis()->SetBinLabel(3, "high-#it{p}_{T} hadron - #Xi");
+    hProcessedEvents->GetXaxis()->SetBinLabel(4, "#Omega");
   }
 
   //Filters
@@ -151,21 +166,30 @@ struct strangenessFilter {
 
     QAHistos.fill(HIST("VtxZAfterSel"), collision.posZ());
     QAHistos.fill(HIST("Centrality"), collision.centV0M());
+    EventsvsMultiplicity.fill(HIST("AllEventsvsMultiplicity"), collision.centV0M());
     hProcessedEvents->Fill(0.5);
 
     //Is event good? [0] = DoubleXi, [1] = high-pT hadron + Xi
-    bool keepEvent[2]{false};
+    bool keepEvent[3]{false};
     //
     float xipos = -1.;
     float xiproperlifetime = -1.;
+    float omegaproperlifetime = -1.;
     float xiptotmom = -1.;
     int xicounter = 0;
+    int omegacounter = 0;
     const float ctauxi = 4.91;    //from PDG
     const float massxi = 1.32171; //from PDG
+    const float ctauomega = 2.461;    //from PDG
+    const float massomega = 1.67245; //from PDG
 
     for (auto& casc : fullCasc) { //loop over cascades
 
+      bool isXi = false;
+      bool isOmega = false;
+
       QAHistos.fill(HIST("hMassXiBefSel"), casc.mXi());
+      QAHistos.fill(HIST("hMassOmegaBefSel"), casc.mOmega());
 
       //Position
       xipos = TMath::Sqrt(TMath::Power(casc.x() - collision.posX(), 2) + TMath::Power(casc.y() - collision.posY(), 2) + TMath::Power(casc.z() - collision.posZ(), 2));
@@ -173,6 +197,7 @@ struct strangenessFilter {
       xiptotmom = TMath::Sqrt(casc.px() * casc.px() + casc.py() * casc.py() + casc.pz() * casc.pz());
       //Proper lifetime
       xiproperlifetime = massxi * xipos / (xiptotmom + 1e-13);
+      omegaproperlifetime = massomega * xipos / (xiptotmom + 1e-13);
 
       //Selections
       auto v0 = casc.v0_as<aod::V0Datas>();
@@ -188,8 +213,9 @@ struct strangenessFilter {
         if (TMath::Abs(v0.negTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
           continue;
       }
-      //if (TMath::Abs(casc.bachelor_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
-      //  continue; //?
+      //this selection differes for Xi and Omegas:
+      // if (TMath::Abs(casc.bachelor_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
+      //  continue; 
 
       //if (TMath::Abs(casc.bachelor_as<DaughterTracks>().eta()) > etadau)
       //  continue; //?
@@ -227,23 +253,23 @@ struct strangenessFilter {
         continue;
       if (TMath::Abs(casc.mLambda() - constants::physics::MassLambda) > masslambdalimit)
         continue;
-      if (TMath::Abs(casc.mXi() - massxi) < ximasswindow) //if (TMath::Abs(casc.mXi() - constants::physics::Massxi) < ximasswindow) continue;
-        continue;
-      if (TMath::Abs(casc.mOmega() - 1.67245) < omegarej)
-        continue; //To be used constants::physics::MassOmega
-      if (xiproperlifetime > properlifetimefactor * ctauxi)
-        continue;
-      if (TMath::Abs(casc.yXi()) > rapidity)
-        continue;
       if (TMath::Abs(casc.eta()) > eta)
         continue;
 
-      QAHistos.fill(HIST("hMassXiAfterSel"), casc.mXi());
-      QAHistos.fill(HIST("hMassXiAfterSel2D"), casc.mXi(), casc.pt());
-
-      //Count number of Xi candidates
-      xicounter++;
-
+      isXi = (TMath::Abs(casc.mXi() - massxi) < ximasswindow) && (TMath::Abs(casc.mOmega() - massomega)>omegarej) && (xiproperlifetime < properlifetimefactor * ctauxi) && (TMath::Abs(casc.yXi()) < rapidity); //add PID on bachelor
+      isOmega = (TMath::Abs(casc.mOmega() - massomega) < omegamasswindow) && (TMath::Abs(casc.mXi() - massxi)>xirej) && (omegaproperlifetime < properlifetimefactor * ctauomega) && (TMath::Abs(casc.yOmega()) < rapidity); //add PID on bachelor
+      if (isXi){
+	QAHistos.fill(HIST("hMassXiAfterSel"), casc.mXi());
+	QAHistos.fill(HIST("hMassXiAfterSel2D"), casc.mXi(), casc.pt());
+	//Count number of Xi candidates
+	xicounter++;
+      }
+      if (isOmega){
+	QAHistos.fill(HIST("hMassOmegaAfterSel"), casc.mOmega());
+	QAHistos.fill(HIST("hMassOmegaAfterSel2D"), casc.mOmega(), casc.pt());
+	//Count number of Omega candidates
+	omegacounter++;
+      }
     } //end loop over cascades
 
     //Double Xi trigger definition
@@ -264,13 +290,26 @@ struct strangenessFilter {
       } // end loop over tracks
     }
 
-    if (keepEvent[0])
+    //omega trigger definition
+    if (omegacounter > 0) {
+      keepEvent[2] = true;
+    }
+
+    if (keepEvent[0]){
       hProcessedEvents->Fill(1.5);
-    if (keepEvent[1])
+      EventsvsMultiplicity.fill(HIST("DXiEventsvsMultiplicity"), collision.centV0M());
+    }
+    if (keepEvent[1]){
       hProcessedEvents->Fill(2.5);
+      EventsvsMultiplicity.fill(HIST("hXiEventsvsMultiplicity"), collision.centV0M());
+    }
+    if (keepEvent[2]){
+      hProcessedEvents->Fill(3.5);
+      EventsvsMultiplicity.fill(HIST("OmegaEventsvsMultiplicity"), collision.centV0M());
+    }
 
     //Filling the table
-    strgtable(keepEvent[0],keepEvent[1]);
+    strgtable(keepEvent[0],keepEvent[1], keepEvent[2]);
   }
 };
 
