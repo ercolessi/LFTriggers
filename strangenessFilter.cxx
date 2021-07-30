@@ -170,7 +170,7 @@ struct strangenessFilter {
     hProcessedEvents->Fill(0.5);
 
     //Is event good? [0] = DoubleXi, [1] = high-pT hadron + Xi
-    bool keepEvent[2]{false};
+    bool keepEvent[3]{false};
     //
     float xipos = -1.;
     float xiproperlifetime = -1.;
