@@ -48,7 +48,7 @@
 #include "AnalysisDataModel/EventSelection.h"
 #include "AnalysisDataModel/Centrality.h"
 #include "AnalysisDataModel/PID/PIDResponse.h"
-#include "filterTables.h"
+#include "../filterTables.h"
 
 #include <TFile.h>
 #include <TH2F.h>
@@ -75,7 +75,7 @@ struct strangenessFilter {
   //Define a histograms and registries
   HistogramRegistry QAHistos{"QAHistos", {}, OutputObjHandlingPolicy::AnalysisObject, true, true};
   HistogramRegistry EventsvsMultiplicity{"EventsvsMultiplicity", {}, OutputObjHandlingPolicy::AnalysisObject, true, true};
-  OutputObj<TH1F> hProcessedEvents{TH1F("hProcessedEvents", "Strangeness - event filtered; Event counter; Number of events", 4, 0., 4.)};
+  OutputObj<TH1F> hProcessedEvents{TH1F("hProcessedEvents", "Strangeness - event filtered; Event counter; Number of events", 6, 0., 6.)};
 
   //Selection criteria for cascades
   Configurable<float> cutzvertex{"cutzvertex", 10.0f, "Accepted z-vertex range"};
@@ -108,7 +108,7 @@ struct strangenessFilter {
   //eta and y selections: loose enough?
   //eta selections of daughters
 
-  //Selections criteria for tacks                                                                                                                
+  //Selections criteria for tracks                                                                                                                
   Configurable<float> hEta{"hEta", 0.8f, "Eta range for trigger particles"};
   Configurable<float> hMinPt{"hMinPt", 1.0f, "Min pt for trigger particles"};
 
@@ -135,14 +135,19 @@ struct strangenessFilter {
     QAHistos.add("PtTrigger", "PtTrigger", HistType::kTH1F, {{300, 0, 30, "Pt of trigger particle"}});
 
     EventsvsMultiplicity.add("AllEventsvsMultiplicity", "Multiplicity distribution of all events", HistType::kTH1F, {centAxis});
-    EventsvsMultiplicity.add("DXiEventsvsMultiplicity", "Multiplicity distribution of events with >1Xi", HistType::kTH1F, {centAxis});
+    EventsvsMultiplicity.add("OmegaEventsvsMultiplicity", "Multiplicity distribution of events with >= 1 Omega", HistType::kTH1F, {centAxis});
     EventsvsMultiplicity.add("hXiEventsvsMultiplicity", "Multiplicity distribution of events with h + Xi", HistType::kTH1F, {centAxis});
-    EventsvsMultiplicity.add("OmegaEventsvsMultiplicity", "Multiplicity distribution of events with >=1 Omega", HistType::kTH1F, {centAxis});
+    EventsvsMultiplicity.add("2XiEventsvsMultiplicity", "Multiplicity distribution of events with >= 2 Xi", HistType::kTH1F, {centAxis});
+    EventsvsMultiplicity.add("3XiEventsvsMultiplicity", "Multiplicity distribution of events with >= 3 Xi", HistType::kTH1F, {centAxis});
+    EventsvsMultiplicity.add("4XiEventsvsMultiplicity", "Multiplicity distribution of events with >= 4 Xi", HistType::kTH1F, {centAxis});
+    
 
     hProcessedEvents->GetXaxis()->SetBinLabel(1, "Events processed");
-    hProcessedEvents->GetXaxis()->SetBinLabel(2, "#Xi-#Xi");
+    hProcessedEvents->GetXaxis()->SetBinLabel(2, "#Omega");
     hProcessedEvents->GetXaxis()->SetBinLabel(3, "high-#it{p}_{T} hadron - #Xi");
-    hProcessedEvents->GetXaxis()->SetBinLabel(4, "#Omega");
+    hProcessedEvents->GetXaxis()->SetBinLabel(4, "2#Xi");
+    hProcessedEvents->GetXaxis()->SetBinLabel(5, "3#Xi");
+    hProcessedEvents->GetXaxis()->SetBinLabel(6, "4#Xi");
   }
 
   //Filters
@@ -169,8 +174,8 @@ struct strangenessFilter {
     EventsvsMultiplicity.fill(HIST("AllEventsvsMultiplicity"), collision.centV0M());
     hProcessedEvents->Fill(0.5);
 
-    //Is event good? [0] = DoubleXi, [1] = high-pT hadron + Xi
-    bool keepEvent[3]{false};
+    //Is event good? [0] = Omega, [1] = high-pT hadron + Xi, [2] = 2Xi, [3] = 3Xi, [4] = 4Xi
+    bool keepEvent[5]{false};
     //
     float xipos = -1.;
     float xiproperlifetime = -1.;
@@ -272,8 +277,8 @@ struct strangenessFilter {
       }
     } //end loop over cascades
 
-    //Double Xi trigger definition
-    if (xicounter > 1) {
+    //Omega trigger definition
+    if (omegacounter > 0) {
       keepEvent[0] = true;
     }
 
@@ -290,14 +295,25 @@ struct strangenessFilter {
       } // end loop over tracks
     }
 
-    //omega trigger definition
-    if (omegacounter > 0) {
+    //2Xi trigger definition
+    if (xicounter > 1) {
       keepEvent[2] = true;
     }
 
+    //3Xi trigger definition
+     if (xicounter > 2) {
+      keepEvent[3] = true;
+    }
+
+    //4Xi trigger definition
+    if (xicounter > 3) {
+      keepEvent[4] = true;
+    }
+
+    //Fill centrality dependent histos
     if (keepEvent[0]){
       hProcessedEvents->Fill(1.5);
-      EventsvsMultiplicity.fill(HIST("DXiEventsvsMultiplicity"), collision.centV0M());
+      EventsvsMultiplicity.fill(HIST("OmegaEventsvsMultiplicity"), collision.centV0M());
     }
     if (keepEvent[1]){
       hProcessedEvents->Fill(2.5);
@@ -305,11 +321,19 @@ struct strangenessFilter {
     }
     if (keepEvent[2]){
       hProcessedEvents->Fill(3.5);
-      EventsvsMultiplicity.fill(HIST("OmegaEventsvsMultiplicity"), collision.centV0M());
+      EventsvsMultiplicity.fill(HIST("2XiEventsvsMultiplicity"), collision.centV0M());
+    }
+    if (keepEvent[3]){
+      hProcessedEvents->Fill(4.5);
+      EventsvsMultiplicity.fill(HIST("3XiEventsvsMultiplicity"), collision.centV0M());
+    }
+    if (keepEvent[4]){
+      hProcessedEvents->Fill(5.5);
+      EventsvsMultiplicity.fill(HIST("4XiEventsvsMultiplicity"), collision.centV0M());
     }
 
     //Filling the table
-    strgtable(keepEvent[0],keepEvent[1], keepEvent[2]);
+    strgtable(keepEvent[0],keepEvent[1], keepEvent[2], keepEvent[3], keepEvent[4]);
   }
 };
 
