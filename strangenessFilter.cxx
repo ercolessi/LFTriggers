@@ -104,7 +104,6 @@ struct strangenessFilter {
   Configurable<float> omegamasswindow{"omegamasswindow", 0.075, "Omega Mass Window"}; //merge the two windows variables into one?   
   Configurable<int> properlifetimefactor{"properlifetimefactor", 5, "Proper Lifetime cut"};
   Configurable<float> nsigmatpc{"nsigmatpc", 6, "N Sigmas TPC"};
-  //missing selections: OOB pileup?
   //eta and y selections: loose enough?
   //eta selections of daughters
 
@@ -208,7 +207,7 @@ struct strangenessFilter {
       auto v0 = casc.v0_as<aod::V0Datas>();
 
       if (casc.sign() == 1) {
-         if (TMath::Abs(v0.posTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
+        if (TMath::Abs(v0.posTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
           continue;
         if (TMath::Abs(v0.negTrack_as<DaughterTracks>().tpcNSigmaPr()) > nsigmatpc)
           continue;
@@ -260,20 +259,22 @@ struct strangenessFilter {
         continue;
       if (TMath::Abs(casc.eta()) > eta)
         continue;
+      if (!v0.posTrack_as<DaughterTracks>().hasTOF() && !v0.negTrack_as<DaughterTracks>().hasTOF()) // && !casc.bachelor_as<DaughterTracks>().hasTOF())
+        continue;
 
       isXi = (TMath::Abs(casc.mXi() - massxi) < ximasswindow) && (TMath::Abs(casc.mOmega() - massomega)>omegarej) && (xiproperlifetime < properlifetimefactor * ctauxi) && (TMath::Abs(casc.yXi()) < rapidity); //add PID on bachelor
       isOmega = (TMath::Abs(casc.mOmega() - massomega) < omegamasswindow) && (TMath::Abs(casc.mXi() - massxi)>xirej) && (omegaproperlifetime < properlifetimefactor * ctauomega) && (TMath::Abs(casc.yOmega()) < rapidity); //add PID on bachelor
       if (isXi){
-	QAHistos.fill(HIST("hMassXiAfterSel"), casc.mXi());
-	QAHistos.fill(HIST("hMassXiAfterSel2D"), casc.mXi(), casc.pt());
-	//Count number of Xi candidates
-	xicounter++;
+        QAHistos.fill(HIST("hMassXiAfterSel"), casc.mXi());
+        QAHistos.fill(HIST("hMassXiAfterSel2D"), casc.mXi(), casc.pt());
+        //Count number of Xi candidates
+        xicounter++;
       }
       if (isOmega){
-	QAHistos.fill(HIST("hMassOmegaAfterSel"), casc.mOmega());
-	QAHistos.fill(HIST("hMassOmegaAfterSel2D"), casc.mOmega(), casc.pt());
-	//Count number of Omega candidates
-	omegacounter++;
+        QAHistos.fill(HIST("hMassOmegaAfterSel"), casc.mOmega());
+        QAHistos.fill(HIST("hMassOmegaAfterSel2D"), casc.mOmega(), casc.pt());
+        //Count number of Omega candidates
+        omegacounter++;
       }
     } //end loop over cascades
 
@@ -285,8 +286,8 @@ struct strangenessFilter {
     //High-pT hadron + Xi trigger definition
     if (xicounter > 0) {
       for (auto track : tracks) { // start loop over tracks
-	//all needed selections applied via aod::track::isGlobalTrack == static_cast<uint8_t>(1u)
-	//no we need track length selections?
+        //all needed selections applied via aod::track::isGlobalTrack == static_cast<uint8_t>(1u)
+        //no we need track length selections?
 
         QAHistos.fill(HIST("hTriggeredParticles"), 1);
         QAHistos.fill(HIST("PtTrigger"), track.pt());
