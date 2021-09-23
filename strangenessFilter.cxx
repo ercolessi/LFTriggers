@@ -18,17 +18,19 @@
 //
 /// \brief A filter task for strangeness filter
 //  usage:
-/*  o2-analysis-timestamp --aod-file ~/Scaricati/AO2D_PbPb.root -b | \
-    o2-analysis-multiplicity-table -b | \
-    o2-analysis-centrality-table -b | \
-    o2-analysis-event-selection -b | \
-    o2-analysis-trackextension -b | \
-    o2-analysis-pid-tpc | \
-    o2-analysis-pid-tof | \
-    o2-analysis-weak-decay-indices -b | \
-    o2-analysis-lambdakzerobuilder --d_bz 5 -b | \
-    o2-analysis-cascadebuilder --d_bz 5 -b | \
-    o2-analysis-strangeness-filter -b 
+/*  
+  o2-analysis-timestamp -b --aod-file AO2D.root   | \
+  o2-analysis-event-selection -b | \
+  o2-analysis-trackselection -b | \
+  o2-analysis-trackextension -b | \
+  o2-analysis-multiplicity-table -b | \
+  o2-analysis-centrality-table -b | \
+  o2-analysis-pid-tof -b | \
+  o2-analysis-pid-tpc -b | \
+  o2-analysis-weak-decay-indices -b | \
+  o2-analysis-lambdakzerobuilder  --d_bz 5 -b | \
+  o2-analysis-cascadebuilder  --d_bz 5 -b | \
+  o2-analysis-strangeness-filter --aod-memory-rate-limit 600000000 -b   
 */
 ///
 ///
@@ -40,15 +42,14 @@
 #include "Framework/AnalysisDataModel.h"
 #include "Framework/ASoAHelpers.h"
 #include "ReconstructionDataFormats/Track.h"
-#include "AnalysisCore/RecoDecay.h"
-#include "AnalysisCore/trackUtilities.h"
-#include "AnalysisDataModel/StrangenessTables.h"
-#include "AnalysisCore/TrackSelection.h"
-#include "AnalysisDataModel/TrackSelectionTables.h"
-#include "AnalysisDataModel/EventSelection.h"
-#include "AnalysisDataModel/Centrality.h"
-#include "AnalysisDataModel/PID/PIDResponse.h"
-#include "../filterTables.h"
+#include "Common/Core/RecoDecay.h"
+#include "Common/Core/trackUtilities.h"
+#include "Common/Core/TrackSelection.h"
+#include "Common/DataModel/TrackSelectionTables.h"
+#include "Common/DataModel/StrangenessTables.h"
+#include "Common/DataModel/EventSelection.h"
+#include "Common/DataModel/Centrality.h"
+#include "Common/Core/PID/PIDResponse.h"
 
 #include <TFile.h>
 #include <TH2F.h>
@@ -61,6 +62,8 @@
 #include <array>
 #include <cstdlib>
 #include "Framework/ASoAHelpers.h"
+
+#include "../filterTables.h"
 
 using namespace o2;
 using namespace o2::framework;
@@ -104,9 +107,9 @@ struct strangenessFilter {
   Configurable<float> omegamasswindow{"omegamasswindow", 0.075, "Omega Mass Window"}; //merge the two windows variables into one?   
   Configurable<int> properlifetimefactor{"properlifetimefactor", 5, "Proper Lifetime cut"};
   Configurable<float> nsigmatpc{"nsigmatpc", 6, "N Sigmas TPC"};
+  Configurable<float> nsigmatof{"nsigmatof", 3, "N Sigmas TOF (OOB condition)"};
   //eta and y selections: loose enough?
-  //eta selections of daughters
-
+  
   //Selections criteria for tracks                                                                                                                
   Configurable<float> hEta{"hEta", 0.8f, "Eta range for trigger particles"};
   Configurable<float> hMinPt{"hMinPt", 1.0f, "Min pt for trigger particles"};
@@ -128,11 +131,15 @@ struct strangenessFilter {
     QAHistos.add("hMassXiAfterSel", "hMassXiAfterSel", HistType::kTH1F, {ximassAxis});
     QAHistos.add("hMassOmegaBefSel", "hMassOmegaBefSel", HistType::kTH1F, {omegamassAxis});
     QAHistos.add("hMassOmegaAfterSel", "hMassOmegaAfterSel", HistType::kTH1F, {omegamassAxis});
+    QAHistos.add("hTOFnsigmaV0PiBefSel", "hTOFnsigmaV0PiBefSel", HistType::kTH1F, {{100, -10, +10, "TOFnsigmaV0PiBefSel"}});
+    QAHistos.add("hTOFnsigmaV0PiAfterSel", "hTOFnsigmaV0PiAfterSel", HistType::kTH1F, {{100, -10, +10, "TOFnsigmaV0PiAfterSel"}});
+    QAHistos.add("hTOFnsigmaPrBefSel", "hTOFnsigmaPrBefSel", HistType::kTH1F, {{100, -10, +10, "TOFnsigmaPrBefSel"}});
+    QAHistos.add("hTOFnsigmaPrAfterSel", "hTOFnsigmaPrAfterSel", HistType::kTH1F, {{100, -10, +10, "TOFnsigmaPrAfterSel"}});
     QAHistos.add("hMassXiAfterSelvsPt", "hMassXiAfterSelvsPt", HistType::kTH2F, {ximassAxis, ptAxis});
     QAHistos.add("hMassOmegaAfterSelvsPt", "hMassOmegaAfterSelvsPt", HistType::kTH2F, {omegamassAxis, ptAxis});
     QAHistos.add("hTriggeredParticles", "Selected triggered particles", HistType::kTH1F, {{10, 0.5, 10.5, "Trigger counter"}});
     QAHistos.add("PtTrigger", "PtTrigger", HistType::kTH1F, {{300, 0, 30, "Pt of trigger particle"}});
-
+    
     EventsvsMultiplicity.add("AllEventsvsMultiplicity", "Multiplicity distribution of all events", HistType::kTH1F, {centAxis});
     EventsvsMultiplicity.add("OmegaEventsvsMultiplicity", "Multiplicity distribution of events with >= 1 Omega", HistType::kTH1F, {centAxis});
     EventsvsMultiplicity.add("hXiEventsvsMultiplicity", "Multiplicity distribution of events with h + Xi", HistType::kTH1F, {centAxis});
@@ -140,7 +147,6 @@ struct strangenessFilter {
     EventsvsMultiplicity.add("3XiEventsvsMultiplicity", "Multiplicity distribution of events with >= 3 Xi", HistType::kTH1F, {centAxis});
     EventsvsMultiplicity.add("4XiEventsvsMultiplicity", "Multiplicity distribution of events with >= 4 Xi", HistType::kTH1F, {centAxis});
     
-
     hProcessedEvents->GetXaxis()->SetBinLabel(1, "Events processed");
     hProcessedEvents->GetXaxis()->SetBinLabel(2, "#Omega");
     hProcessedEvents->GetXaxis()->SetBinLabel(3, "high-#it{p}_{T} hadron - #Xi");
@@ -194,7 +200,7 @@ struct strangenessFilter {
 
       QAHistos.fill(HIST("hMassXiBefSel"), casc.mXi());
       QAHistos.fill(HIST("hMassOmegaBefSel"), casc.mOmega());
-
+      
       //Position
       xipos = TMath::Sqrt(TMath::Power(casc.x() - collision.posX(), 2) + TMath::Power(casc.y() - collision.posY(), 2) + TMath::Power(casc.z() - collision.posZ(), 2));
       //Total momentum
@@ -207,38 +213,53 @@ struct strangenessFilter {
       auto v0 = casc.v0_as<aod::V0Datas>();
 
       if (casc.sign() == 1) {
+        if (TMath::Abs(casc.dcapostopv()) < dcamesontopv)
+          continue;
+        if (TMath::Abs(casc.dcanegtopv()) < dcabaryontopv)
+          continue;
         if (TMath::Abs(v0.posTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
           continue;
         if (TMath::Abs(v0.negTrack_as<DaughterTracks>().tpcNSigmaPr()) > nsigmatpc)
-          continue;
+          continue;    
+        QAHistos.fill(HIST("hTOFnsigmaPrBefSel"), v0.negTrack_as<DaughterTracks>().tofNSigmaPr()); //poi lo tolgo da qui ma mi serve per un check
+        QAHistos.fill(HIST("hTOFnsigmaV0PiBefSel"), v0.posTrack_as<DaughterTracks>().tofNSigmaPi()); //poi lo tolgo da qui ma mi serve per un check 
+        if (
+            (TMath::Abs(v0.posTrack_as<DaughterTracks>().tofNSigmaPi()) > nsigmatof) &&
+            (TMath::Abs(v0.negTrack_as<DaughterTracks>().tofNSigmaPr()) > nsigmatof) //&&
+            //(TMath::Abs(casc.bachelor_as<DaughterTracks>().tofNSigmaPi()) > nsigmatof) 
+           )
+           continue;
+        QAHistos.fill(HIST("hTOFnsigmaPrAfterSel"), v0.negTrack_as<DaughterTracks>().tofNSigmaPr()); //poi lo tolgo da qui ma mi serve per un check
+        QAHistos.fill(HIST("hTOFnsigmaV0PiAfterSel"), v0.posTrack_as<DaughterTracks>().tofNSigmaPi()); //poi lo tolgo da qui ma mi serve per un check 
       } else {
+        if (TMath::Abs(casc.dcanegtopv()) < dcamesontopv)
+          continue;
+        if (TMath::Abs(casc.dcapostopv()) < dcabaryontopv)
+          continue;
         if (TMath::Abs(v0.posTrack_as<DaughterTracks>().tpcNSigmaPr()) > nsigmatpc)
           continue;
         if (TMath::Abs(v0.negTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
           continue;
+        QAHistos.fill(HIST("hTOFnsigmaPrBefSel"), v0.posTrack_as<DaughterTracks>().tofNSigmaPr()); //poi lo tolgo da qui ma mi serve per un check
+        QAHistos.fill(HIST("hTOFnsigmaV0PiBefSel"), v0.negTrack_as<DaughterTracks>().tofNSigmaPi()); //poi lo tolgo da qui ma mi serve per un check 
+        if (
+            (TMath::Abs(v0.posTrack_as<DaughterTracks>().tofNSigmaPr()) > nsigmatof) &&
+            (TMath::Abs(v0.negTrack_as<DaughterTracks>().tofNSigmaPi()) > nsigmatof) //&&
+            //(TMath::Abs(casc.bachelor_as<DaughterTracks>().tofNSigmaPi()) > nsigmatof) 
+           )
+          continue;
+        QAHistos.fill(HIST("hTOFnsigmaPrAfterSel"), v0.posTrack_as<DaughterTracks>().tofNSigmaPr()); //poi lo tolgo da qui ma mi serve per un check
+        QAHistos.fill(HIST("hTOFnsigmaV0PiAfterSel"), v0.negTrack_as<DaughterTracks>().tofNSigmaPi()); //poi lo tolgo da qui ma mi serve per un check 
       }
       //this selection differes for Xi and Omegas:
-      // if (TMath::Abs(casc.bachelor_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
-      //  continue; 
-
-      //if (TMath::Abs(casc.bachelor_as<DaughterTracks>().eta()) > etadau)
-      //  continue; //?
+      //if (TMath::Abs(casc.bachelor_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
+      // continue; 
       if (TMath::Abs(v0.posTrack_as<DaughterTracks>().eta()) > etadau)
         continue; 
       if (TMath::Abs(v0.negTrack_as<DaughterTracks>().eta()) > etadau)
         continue; 
-      
-      if (casc.sign() == 1) {
-        if (TMath::Abs(casc.dcapostopv()) < dcabaryontopv)
-          continue;
-        if (TMath::Abs(casc.dcanegtopv()) < dcamesontopv)
-          continue;
-      } else {
-        if (TMath::Abs(casc.dcanegtopv()) < dcabaryontopv)
-          continue;
-        if (TMath::Abs(casc.dcapostopv()) < dcamesontopv)
-          continue;
-      }
+      //if (TMath::Abs(casc.bachelor_as<DaughterTracks>().eta()) > etadau)
+      //  continue; //?
       if (TMath::Abs(casc.dcabachtopv()) < dcabachtopv)
         continue;
       if (casc.v0radius() > v0radiusupperlimit || casc.v0radius() < v0radius)
@@ -258,8 +279,6 @@ struct strangenessFilter {
       if (TMath::Abs(casc.mLambda() - constants::physics::MassLambda) > masslambdalimit)
         continue;
       if (TMath::Abs(casc.eta()) > eta)
-        continue;
-      if (!v0.posTrack_as<DaughterTracks>().hasTOF() && !v0.negTrack_as<DaughterTracks>().hasTOF()) // && !casc.bachelor_as<DaughterTracks>().hasTOF())
         continue;
 
       isXi = (TMath::Abs(casc.mXi() - massxi) < ximasswindow) && (TMath::Abs(casc.mOmega() - massomega)>omegarej) && (xiproperlifetime < properlifetimefactor * ctauxi) && (TMath::Abs(casc.yXi()) < rapidity); //add PID on bachelor
