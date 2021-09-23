@@ -18,17 +18,19 @@
 //
 /// \brief A filter task for strangeness filter
 //  usage:
-/*  o2-analysis-timestamp --aod-file ~/Scaricati/AO2D_PbPb.root -b | \
-    o2-analysis-multiplicity-table -b | \
-    o2-analysis-centrality-table -b | \
-    o2-analysis-event-selection -b | \
-    o2-analysis-trackextension -b | \
-    o2-analysis-pid-tpc | \
-    o2-analysis-pid-tof | \
-    o2-analysis-weak-decay-indices -b | \
-    o2-analysis-lambdakzerobuilder --d_bz 5 -b | \
-    o2-analysis-cascadebuilder --d_bz 5 -b | \
-    o2-analysis-strangeness-filter -b 
+/*  
+  o2-analysis-timestamp -b --aod-file AO2D.root   | \
+  o2-analysis-event-selection -b | \
+  o2-analysis-trackselection -b | \
+  o2-analysis-trackextension -b | \
+  o2-analysis-multiplicity-table -b | \
+  o2-analysis-centrality-table -b | \
+  o2-analysis-pid-tof -b | \
+  o2-analysis-pid-tpc -b | \
+  o2-analysis-weak-decay-indices -b | \
+  o2-analysis-lambdakzerobuilder  --d_bz 5 -b | \
+  o2-analysis-cascadebuilder  --d_bz 5 -b | \
+  o2-analysis-strangeness-filter --aod-memory-rate-limit 600000000 -b   
 */
 ///
 ///
@@ -211,9 +213,9 @@ struct strangenessFilter {
       auto v0 = casc.v0_as<aod::V0Datas>();
 
       if (casc.sign() == 1) {
-        if (TMath::Abs(casc.dcapostopv()) < dcabaryontopv)
+        if (TMath::Abs(casc.dcapostopv()) < dcamesontopv)
           continue;
-        if (TMath::Abs(casc.dcanegtopv()) < dcamesontopv)
+        if (TMath::Abs(casc.dcanegtopv()) < dcabaryontopv)
           continue;
         if (TMath::Abs(v0.posTrack_as<DaughterTracks>().tpcNSigmaPi()) > nsigmatpc)
           continue;
@@ -230,9 +232,9 @@ struct strangenessFilter {
         QAHistos.fill(HIST("hTOFnsigmaPrAfterSel"), v0.negTrack_as<DaughterTracks>().tofNSigmaPr()); //poi lo tolgo da qui ma mi serve per un check
         QAHistos.fill(HIST("hTOFnsigmaV0PiAfterSel"), v0.posTrack_as<DaughterTracks>().tofNSigmaPi()); //poi lo tolgo da qui ma mi serve per un check 
       } else {
-        if (TMath::Abs(casc.dcanegtopv()) < dcabaryontopv)
+        if (TMath::Abs(casc.dcanegtopv()) < dcamesontopv)
           continue;
-        if (TMath::Abs(casc.dcapostopv()) < dcamesontopv)
+        if (TMath::Abs(casc.dcapostopv()) < dcabaryontopv)
           continue;
         if (TMath::Abs(v0.posTrack_as<DaughterTracks>().tpcNSigmaPr()) > nsigmatpc)
           continue;
