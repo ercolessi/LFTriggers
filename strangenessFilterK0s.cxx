@@ -10,16 +10,18 @@
 ///
 /// \brief A filter task for strangeness filter
 //  usage:
-/*  o2-analysis-timestamp --aod-file /data/dataalice/cdemart/O2/AO2D_15o_t180.root -b | \
-    o2-analysis-multiplicity-table -b | \
-    o2-analysis-centrality-table -b | \
-    o2-analysis-event-selection -b | \
-    o2-analysis-trackextension -b | \
-    o2-analysis-pid-tpc | \
-    o2-analysis-pid-tof | \
-    o2-analysis-weak-decay-indices -b | \
-    o2-analysis-lambdakzerobuilder --d_bz 5 -b | \
-    o2-analysis-strangeness-filter-K0s -b 
+/*  
+  o2-analysis-timestamp -b --aod-file AO2D.root   | \
+  o2-analysis-event-selection -b | \
+  o2-analysis-trackselection -b | \
+  o2-analysis-trackextension -b | \
+  o2-analysis-multiplicity-table -b | \
+  o2-analysis-centrality-table -b | \
+  o2-analysis-pid-tof -b | \
+  o2-analysis-pid-tpc -b | \
+  o2-analysis-weak-decay-indices -b | \
+  o2-analysis-lambdakzerobuilder  --d_bz 5 -b | \
+  o2-analysis-strangeness-filter-K0s --aod-memory-rate-limit 600000000 -b 
 */
 ///
 ///
