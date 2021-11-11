@@ -69,36 +69,50 @@ struct lambdakzeroQA {
   HistogramRegistry registry{
     "registry",
     {
-      {"henum", "henum", {HistType::kTH1F, {{3, 0.0f, 3.0f}}}},
       {"hMassK0Short", "hMassK0Short", {HistType::kTH1F, {{100, 0.46f, 0.54f}}}},
       {"hMassLambda", "hMassLambda", {HistType::kTH1F, {{3000, 0.0f, 3.0f}}}},
       {"hMassAntiLambda", "hMassAntiLambda", {HistType::kTH1F, {{3000, 0.0f, 3.0f}}}},
       {"hV0Radius", "hV0Radius", {HistType::kTH1F, {{1000, 0.0f, 100.0f}}}},
-      {"hV0CosPA", "hV0CosPA", {HistType::kTH1F, {{1000, 0.95f, 1.0f}}}},
+      {"hV0CosPA", "hV0CosPA", {HistType::kTH1F, {{5000, 0.5f, 1.0f}}}},
       {"hDCAPosToPV", "hDCAPosToPV", {HistType::kTH1F, {{1000, 0.0f, 10.0f}}}},
       {"hDCANegToPV", "hDCANegToPV", {HistType::kTH1F, {{1000, 0.0f, 10.0f}}}},
-      {"hDCAV0Dau", "hDCAV0Dau", {HistType::kTH1F, {{1000, 0.0f, 10.0f}}}},
+      {"hDCAV0Dau", "hDCAV0Dau", {HistType::kTH1F, {{2000, 0.0f, 20.0f}}}},
     },
   };
 
+  OutputObj<TH1F> henum{TH1F("henum", "Event counter", 4, 0., 4.)};
+  OutputObj<TH1F> hvertexZ{TH1F("hvertexZ", "Z vertex", 400, -20., 20.)};
+  OutputObj<TH1F> hMult{TH1F("hMult", "Multiplicity distribution", 100, 0., 100.)};
   Configurable<float> cutzvertex{"cutzvertex", 10.0f, "Accepted z-vertex range"};
-  using CollisionCandidates = soa::Join<aod::Collisions, aod::EvSels, aod::CentV0Ms>::iterator;
 
+  void init(InitContext const&)
+  {
+    henum->GetXaxis()->SetBinLabel(1, "All events");
+    henum->GetXaxis()->SetBinLabel(2, "kINT7");
+    henum->GetXaxis()->SetBinLabel(3, "|Zvtx|<10 cm");
+    henum->GetXaxis()->SetBinLabel(4, "sel7");
+  }
+
+  using CollisionCandidates = soa::Join<aod::Collisions, aod::EvSels, aod::CentV0Ms>::iterator;
+  
   void process(CollisionCandidates const& collision, aod::V0Datas const& fullV0s)
   {
 
-    registry.fill(HIST("henum"),0.5);
-    if (collision.posZ() >= cutzvertex){
-      return;
-    }
-    registry.fill(HIST("henum"),1.5);
+    henum->Fill(0.5);
     if (!collision.alias()[kINT7]) {
       return;
     }
-    if (!collision.sel7()) {
+    henum->Fill(1.5);
+    if (TMath::Abs(collision.posZ()) >= cutzvertex){
       return;
     }
-    registry.fill(HIST("henum"),2.5);
+    henum->Fill(2.5);
+    if (!collision.sel7()) {
+      //return; 
+    }
+    //    henum->Fill(3.5);
+    hvertexZ->Fill(collision.posZ());
+    hMult->Fill(collision.centV0M());
 
     for (auto& v0 : fullV0s) {
       registry.fill(HIST("hMassK0Short"), v0.mK0Short());
@@ -119,7 +133,7 @@ struct lambdakzeroanalysis {
   HistogramRegistry registry{
     "registry",
     {
-      {"henum", "henum", {HistType::kTH1F, {{3,0.0f,3.0f}}}},
+      {"henumBis", "henumBis", {HistType::kTH1F, {{3,0.0f,3.0f}}}},
       {"h3dMassK0Short", "h3dMassK0Short", {HistType::kTH3F, {{20, 0.0f, 100.0f}, {200, 0.0f, 10.0f}, {200, 0.450f, 0.550f}}}},
       {"h3dMassLambda", "h3dMassLambda", {HistType::kTH3F, {{20, 0.0f, 100.0f}, {200, 0.0f, 10.0f}, {200, 1.015f, 1.215f}}}},
       {"h3dMassAntiLambda", "h3dMassAntiLambda", {HistType::kTH3F, {{20, 0.0f, 100.0f}, {200, 0.0f, 10.0f}, {200, 1.015f, 1.215f}}}},
@@ -158,20 +172,19 @@ struct lambdakzeroanalysis {
 
 
   void process(soa::Join<aod::Collisions, aod::EvSels, aod::CentV0Ms>::iterator const& collision, soa::Filtered<aod::V0Datas> const& fullV0s)
-  {
-    registry.fill(HIST("henum"),0.5);
-    if (collision.posZ() >= cutzvertex){
+    {
+    registry.fill(HIST("henumBis"),0.5);
+    if (TMath::Abs(collision.posZ()) >= cutzvertex){
       return;
     }
-    registry.fill(HIST("henum"),1.5);
+    registry.fill(HIST("henumBis"),1.5);
     if (!collision.alias()[kINT7]) {
       return;
     }
     if (!collision.sel7()) {
-      return;
+      //      return;
     }
-
-    registry.fill(HIST("henum"),2.5);
+    registry.fill(HIST("henumBis"),2.5);
     for (auto& v0 : fullV0s) {
       //FIXME: could not find out how to filter cosPA and radius variables (dynamic columns)
       if (v0.v0radius() > v0radius && v0.v0cosPA(collision.posX(), collision.posY(), collision.posZ()) > v0cospa) {
