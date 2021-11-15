@@ -8,15 +8,7 @@
 // granted to it by virtue of its status as an Intergovernmental Organization
 // or submit itself to any jurisdiction.
 //
-// Example V0 tutorial task 1: a simple looper
-//
-// Step 1: add extra histogram for lambda and antilambda mass
-// Step 2: add extra 3D histogram with masses, momenta and centralities
-// Step 3: add configurable TPC dE/dx selection
-// Step 4: vary selections
-// Step 5: try with finder instead of builder
-//
-/// \brief A filter task for strangeness filter
+/// \brief A filter task for strangeness triggers
 //  usage:
 /*  
   o2-analysis-timestamp -b --aod-file AO2D.root   | \
@@ -30,11 +22,11 @@
   o2-analysis-weak-decay-indices -b | \
   o2-analysis-lambdakzerobuilder  --d_bz 5 -b | \
   o2-analysis-cascadebuilder  --d_bz 5 -b | \
-  o2-analysis-strangeness-filter --aod-memory-rate-limit 600000000 -b   
+  o2-analysis-strangeness-filter -b   
 */
 ///
 ///
-/// \author Chiara De Martin (chiara.de.martin@cern.ch) 
+/// \author Chiara De Martin (chiara.de.martin@cern.ch)
 /// \author Francesca Ercolessi (francesca.ercolessi@cern.ch)
 /// \since June 1, 2021
 
@@ -151,7 +143,7 @@ struct strangenessFilter {
     hProcessedEvents->GetXaxis()->SetBinLabel(4, "2#Xi");
     hProcessedEvents->GetXaxis()->SetBinLabel(5, "3#Xi");
     hProcessedEvents->GetXaxis()->SetBinLabel(6, "4#Xi");
-    hProcessedEvents->GetXaxis()->SetBinLabel(6, "single-#Xi");
+    hProcessedEvents->GetXaxis()->SetBinLabel(7, "single-#Xi");
   }
 
   //Filters
@@ -163,7 +155,7 @@ struct strangenessFilter {
   using CollisionCandidates = soa::Filtered<soa::Join<aod::Collisions, aod::EvSels, aod::CentV0Ms>>::iterator;
   using TrackCandidates = soa::Filtered<soa::Join<aod::Tracks, aod::TracksExtra, aod::TrackSelection>>;
   using DaughterTracks = soa::Join<aod::FullTracks, aod::TracksExtended, aod::pidTOFPi, aod::pidTPCPi, aod::pidTOFPr, aod::pidTPCPr>;
-  using Cascades = soa::Join<aod::CascData, aod::CascDataExt>;
+  using Cascades = soa::Filtered<aod::CascDataExt>;
 
   void process(CollisionCandidates const& collision, TrackCandidates const& tracks, Cascades const& fullCasc, aod::V0Datas const& V0s, DaughterTracks& dtracks)
   {
@@ -174,8 +166,8 @@ struct strangenessFilter {
       return;
     }
 
-    QAHistos.fill(HIST("VtxZAfterSel"), collision.posZ());
-    QAHistos.fill(HIST("Centrality"), collision.centV0M());
+    QAHistos.fill(HIST("hVtxZAfterSel"), collision.posZ());
+    QAHistos.fill(HIST("hCentrality"), collision.centV0M());
     EventsvsMultiplicity.fill(HIST("AllEventsvsMultiplicity"), collision.centV0M());
     hProcessedEvents->Fill(0.5);
 
@@ -220,16 +212,16 @@ struct strangenessFilter {
 
       if (casc.sign() == 1) {
         if (TMath::Abs(casc.dcapostopv()) < dcamesontopv) {
-          continue
+          continue;
         };
         if (TMath::Abs(casc.dcanegtopv()) < dcabaryontopv) {
-          continue
+          continue;
         };
         if (TMath::Abs(posdau.tpcNSigmaPi()) > nsigmatpc) {
-          continue
+          continue;
         };
         if (TMath::Abs(negdau.tpcNSigmaPr()) > nsigmatpc) {
-          continue
+          continue;
         };
         QAHistos.fill(HIST("hTOFnsigmaPrBefSel"), negdau.tofNSigmaPr());
         QAHistos.fill(HIST("hTOFnsigmaV0PiBefSel"), posdau.tofNSigmaPi());
@@ -237,22 +229,22 @@ struct strangenessFilter {
           (TMath::Abs(posdau.tofNSigmaPi()) > nsigmatof) &&
           (TMath::Abs(negdau.tofNSigmaPr()) > nsigmatof) &&
           (TMath::Abs(bachelor.tofNSigmaPi()) > nsigmatof)) {
-          continue
+          continue;
         };
         QAHistos.fill(HIST("hTOFnsigmaPrAfterSel"), negdau.tofNSigmaPr());
         QAHistos.fill(HIST("hTOFnsigmaV0PiAfterSel"), posdau.tofNSigmaPi());
       } else {
         if (TMath::Abs(casc.dcanegtopv()) < dcamesontopv) {
-          continue
+          continue;
         };
         if (TMath::Abs(casc.dcapostopv()) < dcabaryontopv) {
-          continue
+          continue;
         };
         if (TMath::Abs(posdau.tpcNSigmaPr()) > nsigmatpc) {
-          continue
+          continue;
         };
         if (TMath::Abs(negdau.tpcNSigmaPi()) > nsigmatpc) {
-          continue
+          continue;
         };
         QAHistos.fill(HIST("hTOFnsigmaPrBefSel"), posdau.tofNSigmaPr());
         QAHistos.fill(HIST("hTOFnsigmaV0PiBefSel"), negdau.tofNSigmaPi());
@@ -260,47 +252,47 @@ struct strangenessFilter {
           (TMath::Abs(posdau.tofNSigmaPr()) > nsigmatof) &&
           (TMath::Abs(negdau.tofNSigmaPi()) > nsigmatof) &&
           (TMath::Abs(bachelor.tofNSigmaPi()) > nsigmatof)) {
-          continue
+          continue;
         };
         QAHistos.fill(HIST("hTOFnsigmaPrAfterSel"), posdau.tofNSigmaPr());
         QAHistos.fill(HIST("hTOFnsigmaV0PiAfterSel"), negdau.tofNSigmaPi());
       }
       //this selection differes for Xi and Omegas:
       if (TMath::Abs(bachelor.tpcNSigmaPi()) > nsigmatpc) {
-        continue
+        continue;
       };
       if (TMath::Abs(posdau.eta()) > etadau) {
-        continue
+        continue;
       };
       if (TMath::Abs(negdau.eta()) > etadau) {
-        continue
+        continue;
       };
       if (TMath::Abs(bachelor.eta()) > etadau) {
-        continue
+        continue;
       };
       if (TMath::Abs(casc.dcabachtopv()) < dcabachtopv) {
-        continue
+        continue;
       };
       if (casc.v0radius() > v0radiusupperlimit || casc.v0radius() < v0radius) {
-        continue
+        continue;
       };
       if (casc.cascradius() > cascradiusupperlimit || casc.cascradius() < cascradius) {
-        continue
+        continue;
       };
       if (casc.v0cosPA(collision.posX(), collision.posY(), collision.posZ()) < v0cospa) {
-        continue
+        continue;
       };
       if (casc.dcaV0daughters() > dcav0dau) {
-        continue
+        continue;
       };
       if (casc.dcacascdaughters() > dcacascdau) {
-        continue
+        continue;
       };
       if (TMath::Abs(casc.mLambda() - constants::physics::MassLambda) > masslambdalimit) {
-        continue
+        continue;
       };
       if (TMath::Abs(casc.eta()) > eta) {
-        continue
+        continue;
       };
 
       isXi = (casc.casccosPA(collision.posX(), collision.posY(), collision.posZ()) > casccospa) &&

@@ -1,0 +1,79 @@
+{
+    "internal-dpl-clock": "",
+    "internal-dpl-aod-reader": {
+        "aod-file": "@listConv.txt",
+        "time-limit": "0",
+        "start-value-enumeration": "0",
+        "end-value-enumeration": "-1",
+        "step-value-enumeration": "1"
+    },
+    "internal-dpl-aod-spawner": "",
+    "timestamp-task": {
+        "isRun2MC": "true"
+    },
+    "bc-selection-task": {
+        "isMC": "true",
+        "processRun2": "true",
+        "processRun3": "false"
+    },
+    "event-selection-task": {
+        "syst": "pp",
+        "isMC": "true",
+        "muonSelection": "0",
+        "processRun2": "true",
+        "processRun3": "false"
+    },
+    "multiplicity-table": {
+        "processRun2": "true",
+        "processRun3": "false"
+    },
+    "centrality-table": {
+    },
+    "track-selection": {
+    },
+    "track-extension": {
+        "isMC" : "true",
+        "processRun2": "true",
+        "processRun3": "false"
+    },
+    "tpc-pid-full": {
+    },
+    "tof-pid-full": {
+    },
+    "weak-decay-indices-v0": "",
+    "weak-decay-indices-cascades": "",
+    "lf-lambdakzerobuilder": {
+    },
+    "lf-cascadebuilder": {
+        "d_bz": "5"
+    },
+    "lf-lambdakzeroprefilterpairs": {
+        "isRun2": "1"
+    },
+    "lf-lambdakzeroinitializer": "",
+    "lf-lambdakzeroQA": "",
+    "lf-lambdakzeroanalysis": {
+    },
+    "lf-cascadedoindexing": "",
+
+    "lf-cascadeinitializer": "",
+    "lf-cascadeQA": "",
+    "lf-cascadeanalysis": {
+    },
+    "lf-strangeness-filter": {
+        "masslambdalimit": "0.2",
+        "xirej" : "0.1",
+        "omegarej" : "0.1",
+        "dcacascdau": "1.",
+        "dcav0topv": "0.",
+        "dcabaryontopv" : "5.",
+        "dcabachtopv" : "5.",
+        "dcamesontopv" : "5.",
+        "casccospa" : "0.95",
+        "v0cospa" : "0.95",
+        "cascradius" : "0.",
+        "v0radius" : "0." 
+    },
+    "internal-dpl-aod-global-analysis-file-sink": "",
+    "internal-dpl-aod-writer": ""
+}

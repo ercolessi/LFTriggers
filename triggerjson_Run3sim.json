@@ -1,0 +1,82 @@
+{
+    "internal-dpl-clock": "",
+    "internal-dpl-aod-reader": {
+        "time-limit": "0",
+        "orbit-offset-enumeration": "0",
+        "orbit-multiplier-enumeration": "0",
+        "start-value-enumeration": "0",
+        "end-value-enumeration": "-1",
+        "step-value-enumeration": "1",
+        "aod-file": "@inputList.txt"
+    },
+    "internal-dpl-aod-spawner": "",
+    "internal-dpl-aod-index-builder": "",
+    "timestamp-task": {
+        "processRun2": "false",
+        "processRun3": "true"
+    },
+    "bc-selection-task": {
+        "processRun2": "false",
+        "processRun3": "true"
+    },
+    "event-selection-task": {
+        "syst": "pp",
+        "isMC": "true",
+        "muonSelection": "0",
+        "processRun2": "false",
+        "processRun3": "true"
+    },
+    "track-extension": {
+        "tpcrefit": "false",
+        "processRun2": "false",
+        "processRun3": "true"
+    },
+    "track-selection": {
+        "tpcrefit": "false",
+        "processRun3": "true",
+        "processRun2": "false"
+    },
+    "tpc-pid": {
+    },
+    "tof-pid": {
+    },
+    "multiplicity-table": {
+        "processRun2": "false",
+        "processRun3": "true"
+    },
+    "centrality-table": {
+        "processRun2": "false",
+        "processRun3": "true"
+    },
+    "weak-decay-indices-v0": "",
+    "lf-lambdakzeroprefilterpairs": {
+    },
+    "lf-lambdakzerobuilder": {
+        "d_bz": "2",
+        "tpcrefit": "false",
+        "isRun2": "0"
+    },
+    "weak-decay-indices-cascades": "",
+    "lf-cascadebuilder": {
+        "d_bz": "2",
+        "tpcrefit": "false"
+    },
+    "lf-cascadeinitializer": "",
+    "lf-cascadeQA": "",
+    "lf-cascadeanalysis": {
+    },
+    "lf-strangeness-filter": {
+        "masslambdalimit": "0.1",
+        "dcacascdau": "1.",
+        "dcav0topv": "5.",
+        "dcabachtopv" : "5.",
+        "dcapostopv" : "5.",
+        "dcanegtopv" : "5.",
+        "casccospa" : "0.95",
+        "v0cospa" : "0.95",
+        "cascradius" : "0.",
+        "v0radius" : "0." 
+    },
+    "internal-dpl-aod-global-analysis-file-sink": "",
+    "internal-dpl-aod-writer": ""
+}
