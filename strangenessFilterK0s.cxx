@@ -20,7 +20,7 @@
   o2-analysis-pid-tof -b | \
   o2-analysis-pid-tpc -b | \
   o2-analysis-weak-decay-indices -b | \
-  o2-analysis-lambdakzerobuilder  --d_bz 5 -b | \
+  o2-analysis-lf-lambdakzerobuilder  --d_bz 5 -b | \
   o2-analysis-strangeness-filter-K0s --aod-memory-rate-limit 600000000 -b 
 */
 ///
@@ -72,7 +72,7 @@ struct strangenessFilterK0s {
 
   //Selection criteria for V0s
   Configurable<float> cutzvertex{"cutzvertex", 10.0f, "Accepted z-vertex range"};
-  Configurable<float> v0cospa{"v0cospa", 0.995, "V0 CosPA"}; //is it with respect to Xi decay vertex?
+  Configurable<float> v0cospa{"v0cospa", 0.995, "V0 CosPA"}; //is it with respect to Xi decay vertex? 
   Configurable<float> dcav0dau{"dcav0dau", 1, "DCA V0 Daughters"};       //is it in sigmas?
   Configurable<float> dcanegtopv{"dcanegtopv", 0.06, "DCA Neg To PV"};
   Configurable<float> dcapostopv{"dcapostopv", 0.06, "DCA Pos To PV"};
@@ -116,25 +116,24 @@ struct strangenessFilterK0s {
   //Filters
   Filter collisionFilter = (nabs(aod::collision::posZ) < cutzvertex);
   Filter trackFilter = (nabs(aod::track::eta) < hEta) && (aod::track::isGlobalTrack == static_cast<uint8_t>(1u)) && (aod::track::pt>hMinPt); 
-  //  Filter trackFilter = (nabs(aod::track::eta) < hEta) && (aod::track::isGlobalTrack == true) && (aod::track::pt>hMinPt); 
-  //this does not work, but should be equivalent to the expression above
   Filter preFilterV0 = nabs(aod::v0data::dcapostopv) > dcapostopv&& nabs(aod::v0data::dcanegtopv) > dcanegtopv&& aod::v0data::dcaV0daughters < dcav0dau;
 
   //Tables
   
-  using CollisionCandidates = soa::Filtered<soa::Join<aod::Collisions, aod::EvSels, aod::Cents>>::iterator;
+  using CollisionCandidates = soa::Filtered<soa::Join<aod::Collisions, aod::EvSels, aod::CentV0Ms>>::iterator;
+  //using CollisionCandidates = soa::Join<aod::Collisions, aod::EvSels, aod::CentV0Ms>::iterator;
   using DaughterTracks = soa::Join<aod::Tracks, aod::TracksExtra, aod::pidTOFPi, aod::pidTPCPi, aod::pidTOFPr, aod::pidTPCPr>;
   using TrackCandidates = soa::Filtered<soa::Join<aod::Tracks, aod::TracksExtra, aod::TrackSelection>>;
 
   void process(CollisionCandidates const& collision,  TrackCandidates const& tracks, soa::Filtered<aod::V0Datas> const& fullV0, DaughterTracks& dtracks)
  
   {
-    
+
     if (!collision.alias()[kINT7]) {
       return;
     }
-    if (!collision.sel7()) { //what's that?
-      return;
+    if (!collision.sel7()) { 
+      //      return;
     }
 
     QAHistos.fill(HIST("VtxZAfterSel"), collision.posZ());
@@ -154,6 +153,8 @@ struct strangenessFilterK0s {
     
     for (auto& v0 : fullV0) { //loop over V0s
 
+      if (TMath::Abs(v0.eta()) > eta) continue;
+      if (TMath::Abs(v0.mK0Short() - massK0s) > k0smasswindow) continue;      
       QAHistos.fill(HIST("hMassK0sBefSel"), v0.mK0Short());
 
       //Position
@@ -168,13 +169,11 @@ struct strangenessFilterK0s {
       //-----------------------                                                                                                                  
       // TOPOLOGICAL - KINEMATIC SELECTIONS                                                                                                      
       //-----------------------                                                                                                                  
-      if (TMath::Abs(v0.eta()) > eta) continue;
       if (v0.v0radius() < v0radius) continue;
       if (v0.dcav0topv(collision.posX(), collision.posY(), collision.posZ()) > dcav0topv) continue;
       if (v0.v0cosPA(collision.posX(), collision.posY(), collision.posZ()) < v0cospa) continue;
       if (TMath::Abs(v0.mLambda() - constants::physics::MassLambda) < LRej) continue;
       if (K0sproperlifetime > properlifetimefactor * ctauK0s) continue;
-      if (TMath::Abs(v0.mK0Short() - massK0s) < k0smasswindow) continue;      
       QAHistos.fill(HIST("hMassK0sAfterSel"), v0.mK0Short());
 
       //Count number of K0s candidates
